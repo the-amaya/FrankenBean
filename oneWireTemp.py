@@ -3,18 +3,12 @@ import RPi.GPIO as GPIO
 import glob
 import time
 
-GPIO.setmode(GPIO.BCM)
 
-# initialized pins
+# set constants
 
 outtemp = '/sys/bus/w1/devices/28-000004a83011/w1_slave'
 intemp = '/sys/bus/w1/devices/28-000004a7915b/w1_slave' 
 
-# loop through pins and set GPIOs accordingly
-
-for i in pinList:
-	GPIO.setup(i, GPIO.OUT)
-	GPIO.output(i, GPIO.HIGH)
 
 # sleep between turning on in the main loop
 
@@ -39,11 +33,12 @@ def readTemp(device):
 	return temp_c, temp_f
 
 
-a = 1
-while True:
-	while a < 10:
-		a = a + 1
-		print '%s%f%s%f'%('intemp ', readTemp(intemp)[1], '    outtemp ', readTemp(outtemp)[1])
-		time.sleep(.5)
+def continuousTempRead():
 	a = 1
-	print time.strftime('%l:%M%p %Z on %b %d, %Y')
+	while True:
+		while a < 10:
+			a = a + 1
+			print ('%s%f%s%f' % ('intemp ', readTemp(intemp)[1], '    outtemp ', readTemp(outtemp)[1]))
+			time.sleep(.5)
+		a = 1
+		print (time.strftime('%l:%M%p %Z on %b %d, %Y'))

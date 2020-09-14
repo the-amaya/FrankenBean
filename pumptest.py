@@ -77,7 +77,7 @@ def fillReservoir(a):
 		print ("the function fillReservoir now requires a level as 'low', 'med', 'high'")
 		return None
 	num = 0
-	writeCommand('clear')
+	writeCommand(1)
 	print ('flow counter cleared')
 	for x in [17, 18, 22]:
 		GPIO.output(x, GPIO.LOW)
@@ -85,14 +85,14 @@ def fillReservoir(a):
 	for x in [26, 19, 13]:
 		GPIO.setup(x, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 	while GPIO.input(lvl):
-		print ('Secs:%d, Target level: %d, Low:%d, Med:%d, High:%d, current flow count:%d ' % (num, lvl, GPIO.input(26), GPIO.input(19), GPIO.input(13), flowOut()))
+		print ('Secs:%d, Target level: %d, Low:%d, Med:%d, High:%d, current flow count:%d ' % (num, lvl, GPIO.input(26), GPIO.input(19), GPIO.input(13), flowCount()))
 		num = num + 1
 		time.sleep(1)
 	GPIO.output(17, GPIO.HIGH)
 	GPIO.output(18, GPIO.HIGH)
 	GPIO.output(22, GPIO.HIGH)
 	print ('pump and solenoids off')
-	return flowOut()
+	return flowCount()
 
 def heater(a):
 # heats to the target raw sensor value
@@ -150,7 +150,7 @@ def getTemp():
 	while c < 10:
 		l.insert(0, i2cadc())
 		l.pop()
-		print (*l, average(l))
+		#print (*l, average(l))
 		c = c + 1
 	return average(l)
 
@@ -169,16 +169,16 @@ def i2cadc():
 def brewCoffee():
 # used to dispense one french press worth of water had coffee brewing temperature
 	dc = fillReservoir('med')
-	brewCoffee()
+	coffeeHeat()
 	emptyReservoir(18)
 	dc = dc + fillReservoir('med')
-	brewCoffee()
+	coffeeHeat()
 	emptyReservoir(18)
 	dc = dc + fillReservoir('low')
-	brewCoffee()
+	coffeeHeat()
 	emptyReservoir(14)
 	dc = dc + fillReservoir('low')
-	brewCoffee()
+	coffeeHeat()
 	emptyReservoir(14)
 	print ("total dispensed liquid = %i" % dc)
 	print ("enjoy your coffee bitch")
@@ -206,16 +206,16 @@ try:
 		usrip = input()
 
 		if (usrip[:4] == 'fill'): # this should silently fail safe
-			if usrip[5:] in {'low', 'med', 'high'}
-				fillReservoir(usrip[5:])
-			
+			if usrip[5:] in ['low', 'med', 'high']:
+				print(fillReservoir(usrip[5:]))
+
 		elif (usrip[:4] == 'heat'): # the int here should catch bad input (though we will crash to terminal at the moment)
 			print ('target temp %s' % usrip[5:])
 			heater(int(usrip[5:]))
-			
+
 		elif (usrip[:5] == 'drain'): # the int here should catch bad input (though we will crash to terminal at the moment)
 			emptyReservoir(int(usrip[6:]))
-			
+
 		elif (usrip[:5] == 'cycle'): # the int here should catch bad input (though we will crash to terminal at the moment)
 			fdc = int(usrip[6:])
 			while fdc > 0:
