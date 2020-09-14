@@ -5,6 +5,7 @@ import os
 import Adafruit_ADS1x15
 
 from flowMeter import flowCount, writeCommand
+from oneWireTemp import readTemp
 
 
 # constants used later
@@ -31,34 +32,14 @@ for i in inPinList:
 
 # the land of functions
 
-def read_temp_raw(device):
-	# 1wire direct read function used by read_temp()
-	f = open(device, 'r')
-	lines = f.readlines()
-	f.close()
-	return lines
-
-def read_temp(device):
-# returns a tuple [tempC, tempF] for specified 1wire device
-# attempts to re-read the sensor over and over until good data is received. this is not safe and will hang if unable to ever read good data
-	lines = read_temp_raw(device)
-	while (lines[0].strip()[-3:] != 'YES' or lines[1].find('t=') == -1):
-		time.sleep(0.2)
-		lines = read_temp_raw()
-	equals_pos = lines[1].find('t=')
-	temp_string = lines[1][equals_pos+2:]
-	temp_c = float(temp_string) / 1000.0
-	temp_f = temp_c * 9.0 / 5.0 + 32.0
-	return temp_c, temp_f
-
 def brewWatch(min):
-	# takes a value in minutes to monitor the coffee temp probe and return the average temp
+# takes a value in minutes to monitor the coffee temp probe and return the average temp
 	a = min * 60
 	l = []
 	c = 0
 	while int(c) < int(a):
 		c = c + 1
-		l.insert(0, read_temp(a)[1])
+		l.insert(0, readTemp(a)[1])
 		print ('count %i of %i   current average = %f' % (c, a, average(l)))
 		time.sleep(1)
 	return average(l)
@@ -69,7 +50,7 @@ def maxTemp(a):
 	c = 0
 	while c < a:
 		c = c + 1
-		l.insert(0, read_temp(a)[1])
+		l.insert(0, readTemp(a)[1])
 		l.pop()
 		print ('count %i of %i   current max read = %f' % (c, a, max(l)))
 		time.sleep(1)
@@ -85,7 +66,7 @@ def emptyReservoir(a):
 
 
 def fillReservoir(a):
-# fill the reservoir to specified level of 'low', 'med, 'high' 
+# fill the reservoir to specified level of 'low', 'med, 'high' and return the total flow count
 	if a == 'low':
 		lvl = 26
 	elif a == 'med':
@@ -237,7 +218,7 @@ try:
 			
 		elif (usrip[:5] == 'cycle'): # the int here should catch bad input (though we will crash to terminal at the moment)
 			fdc = int(usrip[6:])
-			while fdc > 0
+			while fdc > 0:
 				fdc = fdc - 1
 				for a in ['low', 'med', 'high']:
 					fillReservoir(a)

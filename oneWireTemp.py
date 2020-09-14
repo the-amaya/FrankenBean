@@ -18,18 +18,20 @@ for i in pinList:
 
 # sleep between turning on in the main loop
 
-def read_temp_raw(device):
-    f = open(device, 'r')
-    lines = f.readlines()
-    f.close()
-    return lines
+def readTempRaw(device):
+	# 1wire direct read function used by read_temp()
+	f = open(device, 'r')
+	lines = f.readlines()
+	f.close()
+	return lines
 
-def read_temp(device):
+def readTemp(device):
 # returns a tuple [tempC, tempF] for specified 1wire device
-	lines = read_temp_raw(device)
+# attempts to re-read the sensor over and over until good data is received. this is not safe and will hang if unable to ever read good data
+	lines = readTempRaw(device)
 	while (lines[0].strip()[-3:] != 'YES' or lines[1].find('t=') == -1):
 		time.sleep(0.2)
-		lines = read_temp_raw()
+		lines = readTempRaw()
 	equals_pos = lines[1].find('t=')
 	temp_string = lines[1][equals_pos+2:]
 	temp_c = float(temp_string) / 1000.0
@@ -41,7 +43,7 @@ a = 1
 while True:
 	while a < 10:
 		a = a + 1
-		print '%s%f%s%f'%('intemp ', read_temp(intemp)[1], '    outtemp ', read_temp(outtemp)[1])
+		print '%s%f%s%f'%('intemp ', readTemp(intemp)[1], '    outtemp ', readTemp(outtemp)[1])
 		time.sleep(.5)
 	a = 1
 	print time.strftime('%l:%M%p %Z on %b %d, %Y')

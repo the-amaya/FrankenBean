@@ -43,3 +43,6 @@ def flowCount():
 		if (100 > sum(k)):
 			a = ''
 	return average(l)
+
+def average(lst):
+	return sum(lst) / len(lst)
