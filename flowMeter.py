@@ -13,9 +13,9 @@ def writeCommand(val):
 # an input value of '1' will reset the counter
 	try:
 		bus.write_byte(address, val)
-		print ('flowcounter reset')
+		#print ('flowcounter reset')
 	except:
-		print ('failed to reset flow counter')
+		#print ('failed to reset flow counter')
 		pass
 
 def readTotal():
@@ -26,7 +26,7 @@ def readTotal():
 		try:
 			a = bus.read_word_data(address, 0)
 		except:
-			print ('readTotal() re-read')
+			#print ('readTotal() re-read')
 			a = None
 	return a
 
@@ -44,12 +44,12 @@ def flowCount():
 		k.append(abs(l[2] - l[0]))
 		a = '1'
 		if (2000 < sum(k)):
-			print (l)
-			print (k)
-			print (sum(k))
-			print ('difference in flow readings. assuming possible bad read')
+			#print (l)
+			#print (k)
+			#print (sum(k))
+			#print ('difference in flow readings. assuming possible bad read')
 			a = ''
-	return average(l)
+	return round(average(l))
 
 def average(lst):
 	return sum(lst) / len(lst)

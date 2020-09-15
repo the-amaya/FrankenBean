@@ -6,7 +6,7 @@ import Adafruit_ADS1x15
 
 from flowMeter import flowCount, writeCommand
 from oneWireTemp import readTemp
-
+from progressBar import printProgressBar
 
 # constants used later
 adc = Adafruit_ADS1x15.ADS1015()
@@ -59,40 +59,55 @@ def maxTemp(a):
 def emptyReservoir(a):
 # takes 'a' time in seconds to run the air pump to drain the tank
 	GPIO.output(10, GPIO.LOW)
-	print ("Running the air pump for %i seconds" % (a))
-	time.sleep(a)
+	b = 0
+	#print ("Running the air pump for %i seconds" % (a))
+	printProgressBar(0, a, prefix = 'Drain Progress:  ', suffix = 'Complete', length = 100)
+	while b < a:
+		b = b + 1
+		time.sleep(1)
+		printProgressBar(b, a, prefix = 'Drain Progress:  ', suffix = 'Complete', length = 100)
 	GPIO.output(10, GPIO.HIGH)
-	print ("Air pump now off")
+	#print ("Air pump now off")
 
 
 def fillReservoir(a):
 # fill the reservoir to specified level of 'low', 'med, 'high' and return the total flow count
 	if a == 'low':
 		lvl = 26
+		flowMax = 21000
 	elif a == 'med':
 		lvl = 19
+		flowMax = 28000
 	elif a == 'high':
 		lvl = 13
+		flowMax = 32000
 	else:
 		print ("the function fillReservoir now requires a level as 'low', 'med', 'high'")
 		return None
 	num = 0
 	writeCommand(1)
-	print ('flow counter cleared')
+	#print ('flow counter cleared')
 	for x in [17, 18, 22]:
 		GPIO.output(x, GPIO.LOW)
-	print ("Pump and Solenoids On")
+	#print ("Pump and Solenoids On")
 	for x in [26, 19, 13]:
 		GPIO.setup(x, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+	printProgressBar(0, flowMax, prefix = 'Fill Progress:   ', suffix = 'Complete', length = 100)
 	while GPIO.input(lvl):
-		print ('Secs:%d, Target level: %d, Low:%d, Med:%d, High:%d, current flow count:%d ' % (num, lvl, GPIO.input(26), GPIO.input(19), GPIO.input(13), flowCount()))
-		num = num + 1
 		time.sleep(1)
+		b = flowCount()
+		flowSafe = (b if b < flowMax else flowMax)
+		#print ('Secs:%d, Target level: %d, Low:%d, Med:%d, High:%d, current flow count:%d ' % (num, lvl, GPIO.input(26), GPIO.input(19), GPIO.input(13), flowCount()))
+		printProgressBar(flowSafe, flowMax, prefix = 'Fill Progress:   ', suffix = 'Complete', length = 100)
+		num = num + 1
+	printProgressBar(flowMax, flowMax, prefix = 'Fill Progress:   ', suffix = 'Complete', length = 100)
 	GPIO.output(17, GPIO.HIGH)
 	GPIO.output(18, GPIO.HIGH)
 	GPIO.output(22, GPIO.HIGH)
-	print ('pump and solenoids off')
-	return flowCount()
+	#print ('pump and solenoids off')
+	with open("fillcount-%s.txt" % (a), "a+") as fl:
+		fl.write(str(b) + "\n")
+	return b
 
 def heater(a):
 # heats to the target raw sensor value
@@ -115,15 +130,23 @@ def coffeeHeat():
 	a = getTemp()
 	while (a > 700): # we need to let the sensor normalize to cold water being added
 		a = getTemp()
-		print (a)
+		#print (a)
 		time.sleep(0.1)
 	GPIO.output(22, GPIO.LOW)
 	GPIO.output(27, GPIO.LOW)
 	a = getTemp()
+	maxa = 0
+	offset = a
+	offsetTotal = 950 - a
+	printProgressBar(0, offsetTotal, prefix = 'Heating progress:', suffix = 'Complete', length = 100)
 	while( a < 950 ): # heat to serving temp -raw sensor reading- this may need to go into a constant up top for easy adjustment
 		a = getTemp()
+		offsetA = a - offset
+		maxa = (offsetA if offsetA > maxa else maxa)
+		maxa = (offsetTotal if offsetA > offsetTotal else maxa)
 		time.sleep(0.1)
-		print (a)
+		#print ('rawread:%f maxa:%f\n' % (a, maxa))
+		printProgressBar((maxa), offsetTotal, prefix = 'Heating progress:', suffix = 'Complete', length = 100)
 	GPIO.output(27, GPIO.HIGH)
 	GPIO.output(22, GPIO.HIGH)
 
@@ -168,23 +191,30 @@ def i2cadc():
 
 def brewCoffee():
 # used to dispense one french press worth of water had coffee brewing temperature
+	os.system('clear')
+	print ('Cycle 1 of 4 starting')
 	dc = fillReservoir('med')
 	coffeeHeat()
 	emptyReservoir(18)
+	print ('Cycle 2 of 4 starting')
 	dc = dc + fillReservoir('med')
 	coffeeHeat()
 	emptyReservoir(18)
+	print ('Cycle 3 of 4 starting')
 	dc = dc + fillReservoir('low')
 	coffeeHeat()
 	emptyReservoir(14)
+	print ('Cycle 4 of 4 starting')
 	dc = dc + fillReservoir('low')
 	coffeeHeat()
 	emptyReservoir(14)
 	print ("total dispensed liquid = %i" % dc)
 	print ("enjoy your coffee bitch")
+	print ('')
 
 
 try:
+	os.system('clear')
 	while True:
 		#os.system('clear')
 		print ('Please use the following commands (do not include parenthesies in your commands)')
