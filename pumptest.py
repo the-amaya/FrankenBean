@@ -13,7 +13,9 @@ adc = Adafruit_ADS1x15.ADS1015()
 GAIN = 8
 num = 0
 temp1 = '/sys/bus/w1/devices/28-000004a83011/w1_slave'
-temp2 = '/sys/bus/w1/devices/28-000004a7915b/w1_slave' 
+temp2 = '/sys/bus/w1/devices/28-000004a7915b/w1_slave'
+heatPointLow = 700
+heatPointHigh = 970
 
 
 # initialize GPIO
@@ -66,6 +68,8 @@ def emptyReservoir(a):
 		b = b + 1
 		time.sleep(1)
 		printProgressBar(b, a, prefix = 'Drain Progress:  ', suffix = 'Complete', length = 100)
+	printProgressBar(a, a, prefix = 'Drain Progress:  ', suffix = 'Complete', length = 100)
+	print()
 	GPIO.output(10, GPIO.HIGH)
 	#print ("Air pump now off")
 
@@ -101,6 +105,7 @@ def fillReservoir(a):
 		printProgressBar(flowSafe, flowMax, prefix = 'Fill Progress:   ', suffix = 'Complete', length = 100)
 		num = num + 1
 	printProgressBar(flowMax, flowMax, prefix = 'Fill Progress:   ', suffix = 'Complete', length = 100)
+	print()
 	GPIO.output(17, GPIO.HIGH)
 	GPIO.output(18, GPIO.HIGH)
 	GPIO.output(22, GPIO.HIGH)
@@ -126,9 +131,10 @@ def heater(a):
 
 def coffeeHeat():
 # this controls the heat cycle when brewing
+	h = 5 # this is how many seconds the temp must hold otherwise heat again
 	getTemp()
 	a = getTemp()
-	while (a > 700): # we need to let the sensor normalize to cold water being added
+	while (a > heatPointLow): # we need to let the sensor normalize to cold water being added
 		a = getTemp()
 		#print (a)
 		time.sleep(0.1)
@@ -136,17 +142,30 @@ def coffeeHeat():
 	GPIO.output(27, GPIO.LOW)
 	a = getTemp()
 	maxa = 0
-	offset = a
-	offsetTotal = 950 - a
+	offset = a + h
+	offsetTotal = heatPointHigh - a
+	offsetHighA = heatPointHigh - offset
 	printProgressBar(0, offsetTotal, prefix = 'Heating progress:', suffix = 'Complete', length = 100)
-	while( a < 950 ): # heat to serving temp -raw sensor reading- this may need to go into a constant up top for easy adjustment
+	b = 0
+	if (b <= h):
+		while( a < heatPointHigh ):
+			a = getTemp()
+			offsetA = a - offset
+			maxa = (offsetA if offsetA > maxa else maxa)
+			maxa = (offsetHighA if offsetA > offsetHighA else maxa)
+			time.sleep(0.1)
+			printProgressBar((maxa), offsetTotal, prefix = 'Heating progress:', suffix = 'Complete', length = 100)
+		b = b + 1
+		time.sleep(1)
 		a = getTemp()
 		offsetA = a - offset
-		maxa = (offsetA if offsetA > maxa else maxa)
-		maxa = (offsetTotal if offsetA > offsetTotal else maxa)
+		maxa = (offsetA if offsetA > maxa else offsetA) # this is pointless
+		maxa = (offsetHighA if offsetA > offsetHighA else maxa)
 		time.sleep(0.1)
-		#print ('rawread:%f maxa:%f\n' % (a, maxa))
-		printProgressBar((maxa), offsetTotal, prefix = 'Heating progress:', suffix = 'Complete', length = 100)
+		c = maxa + b
+		printProgressBar((c), offsetTotal, prefix = 'Heating progress:', suffix = 'Complete', length = 100)
+	printProgressBar(offsetTotal, offsetTotal, prefix = 'Heating progress:', suffix = 'Complete', length = 100)
+	print()
 	GPIO.output(27, GPIO.HIGH)
 	GPIO.output(22, GPIO.HIGH)
 
