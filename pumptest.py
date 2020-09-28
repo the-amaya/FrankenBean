@@ -3,6 +3,7 @@ import RPi.GPIO as GPIO
 import time
 import os
 import Adafruit_ADS1x15
+import sys
 
 from flowMeter import flowCount, writeCommand
 from oneWireTemp import readTemp
@@ -129,8 +130,12 @@ def heater(a):
 	GPIO.output(22, GPIO.HIGH)
 	print ('heating complete')
 
-def coffeeHeat():
+def coffeeHeat(level):
 # this controls the heat cycle when brewing
+	n = os.fork()
+	if n == 0:
+		#child process fills and then dies. requires level as low med high
+		fillWhileHeat(level)
 	h = 5 # this is how many seconds the temp must hold otherwise heat again
 	getTemp()
 	a = getTemp()
@@ -168,6 +173,48 @@ def coffeeHeat():
 	print()
 	GPIO.output(27, GPIO.HIGH)
 	GPIO.output(22, GPIO.HIGH)
+
+def fillWhileHeat(a):
+# fill the reservoir to specified level of 'low', 'med, 'high' and return the total flow count
+	if a == 'low':
+		lvl = 26
+		#flowMax = 21000
+	elif a == 'med':
+		lvl = 19
+		#flowMax = 28000
+	elif a == 'high':
+		lvl = 13
+		#flowMax = 32000
+	else:
+		#print ("the function fillWhileHeat requires a level as 'low', 'med', 'high'")
+		return None
+	num = 0
+	writeCommand(1)
+	#print ('flow counter cleared')
+	for x in [17, 18, 22]:
+		GPIO.output(x, GPIO.LOW)
+	#print ("Pump and Solenoids On")
+	for x in [26, 19, 13]:
+		GPIO.setup(x, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+	#printProgressBar(0, flowMax, prefix = 'Fill Progress:   ', suffix = 'Complete', length = 100)
+	while GPIO.input(lvl):
+		time.sleep(1)
+		b = flowCount()
+		#flowSafe = (b if b < flowMax else flowMax)
+		#print ('Secs:%d, Target level: %d, Low:%d, Med:%d, High:%d, current flow count:%d ' % (num, lvl, GPIO.input(26), GPIO.input(19), GPIO.input(13), flowCount()))
+		#printProgressBar(flowSafe, flowMax, prefix = 'Fill Progress:   ', suffix = 'Complete', length = 100)
+		num = num + 1
+	#printProgressBar(flowMax, flowMax, prefix = 'Fill Progress:   ', suffix = 'Complete', length = 100)
+	#print()
+	for x in [17, 18, 22]:
+		GPIO.output(x, GPIO.HIGH)
+	#GPIO.output(18, GPIO.HIGH)
+	#GPIO.output(22, GPIO.HIGH)
+	#print ('pump and solenoids off')
+	with open("fillcount-%s.txt" % (a), "a+") as fl:
+		fl.write(str(b) + "\n")
+	#return b
+	sys.exit()
 
 def stepTest(a):
 # takes a list of numbers then runs one heat/dispense cycle and records the maximum output temperature
@@ -211,23 +258,23 @@ def i2cadc():
 def brewCoffee():
 # used to dispense one french press worth of water had coffee brewing temperature
 	os.system('clear')
-	print ('Cycle 1 of 4 starting')
-	dc = fillReservoir('med')
-	coffeeHeat()
-	emptyReservoir(18)
-	print ('Cycle 2 of 4 starting')
-	dc = dc + fillReservoir('med')
-	coffeeHeat()
-	emptyReservoir(18)
-	print ('Cycle 3 of 4 starting')
-	dc = dc + fillReservoir('low')
-	coffeeHeat()
-	emptyReservoir(14)
-	print ('Cycle 4 of 4 starting')
-	dc = dc + fillReservoir('low')
-	coffeeHeat()
-	emptyReservoir(14)
-	print ("total dispensed liquid = %i" % dc)
+	print ('Cycle 1 of 3 starting')
+	#dc = fillReservoir('med')
+	coffeeHeat(high)
+	emptyReservoir(20)
+	print ('Cycle 2 of 3 starting')
+	#dc = dc + fillReservoir('med')
+	coffeeHeat(high)
+	emptyReservoir(20)
+	print ('Cycle 3 of 3 starting')
+	#dc = dc + fillReservoir('low')
+	coffeeHeat(high)
+	emptyReservoir(20)
+	#print ('Cycle 4 of 4 starting')
+	#dc = dc + fillReservoir('low')
+	#coffeeHeat()
+	#emptyReservoir(14)
+	#print ("total dispensed liquid = %i" % dc)
 	print ("enjoy your coffee bitch")
 	print ('')
 
@@ -300,5 +347,5 @@ except KeyboardInterrupt:
 	GPIO.cleanup()
 	print ("Turning Shit Off Real Quick...")
 
-print ('EoF CLEANUP ROUTINE')
-GPIO.cleanup()
+#print ('EoF CLEANUP ROUTINE')
+#GPIO.cleanup()
