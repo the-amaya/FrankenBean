@@ -15,8 +15,8 @@ GAIN = 8
 num = 0
 temp1 = '/sys/bus/w1/devices/28-000004a83011/w1_slave'
 temp2 = '/sys/bus/w1/devices/28-000004a7915b/w1_slave'
-heatPointLow = 700
-heatPointHigh = 970
+heatPointLow = 850
+heatPointHigh = 1000
 
 
 # initialize GPIO
@@ -139,12 +139,11 @@ def coffeeHeat(level):
 	h = 5 # this is how many seconds the temp must hold otherwise heat again
 	getTemp()
 	a = getTemp()
+	GPIO.output(22, GPIO.LOW)
 	while (a > heatPointLow): # we need to let the sensor normalize to cold water being added
 		a = getTemp()
 		#print (a)
 		time.sleep(0.1)
-	GPIO.output(22, GPIO.LOW)
-	GPIO.output(27, GPIO.LOW)
 	a = getTemp()
 	maxa = 0
 	offset = a + h
@@ -152,14 +151,17 @@ def coffeeHeat(level):
 	offsetHighA = heatPointHigh - offset
 	printProgressBar(0, offsetTotal, prefix = 'Heating progress:', suffix = 'Complete', length = 100)
 	b = 0
-	if (b <= h):
+	while (b <= h):
 		while( a < heatPointHigh ):
+			b = 0
+			GPIO.output(27, GPIO.LOW)
 			a = getTemp()
 			offsetA = a - offset
 			maxa = (offsetA if offsetA > maxa else maxa)
 			maxa = (offsetHighA if offsetA > offsetHighA else maxa)
 			time.sleep(0.1)
 			printProgressBar((maxa), offsetTotal, prefix = 'Heating progress:', suffix = 'Complete', length = 100)
+		GPIO.output(27, GPIO.HIGH)
 		b = b + 1
 		time.sleep(1)
 		a = getTemp()
@@ -171,8 +173,8 @@ def coffeeHeat(level):
 		printProgressBar((c), offsetTotal, prefix = 'Heating progress:', suffix = 'Complete', length = 100)
 	printProgressBar(offsetTotal, offsetTotal, prefix = 'Heating progress:', suffix = 'Complete', length = 100)
 	print()
-	GPIO.output(27, GPIO.HIGH)
 	GPIO.output(22, GPIO.HIGH)
+
 
 def fillWhileHeat(a):
 # fill the reservoir to specified level of 'low', 'med, 'high' and return the total flow count
@@ -189,6 +191,7 @@ def fillWhileHeat(a):
 		#print ("the function fillWhileHeat requires a level as 'low', 'med', 'high'")
 		return None
 	num = 0
+	b = 0
 	writeCommand(1)
 	#print ('flow counter cleared')
 	for x in [17, 18, 22]:
@@ -206,7 +209,7 @@ def fillWhileHeat(a):
 		num = num + 1
 	#printProgressBar(flowMax, flowMax, prefix = 'Fill Progress:   ', suffix = 'Complete', length = 100)
 	#print()
-	for x in [17, 18, 22]:
+	for x in [17, 18]:
 		GPIO.output(x, GPIO.HIGH)
 	#GPIO.output(18, GPIO.HIGH)
 	#GPIO.output(22, GPIO.HIGH)
@@ -260,15 +263,15 @@ def brewCoffee():
 	os.system('clear')
 	print ('Cycle 1 of 3 starting')
 	#dc = fillReservoir('med')
-	coffeeHeat(high)
+	coffeeHeat('high')
 	emptyReservoir(20)
 	print ('Cycle 2 of 3 starting')
 	#dc = dc + fillReservoir('med')
-	coffeeHeat(high)
+	coffeeHeat('high')
 	emptyReservoir(20)
 	print ('Cycle 3 of 3 starting')
 	#dc = dc + fillReservoir('low')
-	coffeeHeat(high)
+	coffeeHeat('high')
 	emptyReservoir(20)
 	#print ('Cycle 4 of 4 starting')
 	#dc = dc + fillReservoir('low')
