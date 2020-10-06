@@ -22,12 +22,12 @@ heatPointHigh = 1000
 # initialize GPIO
 
 GPIO.setmode(GPIO.BCM)
-outPinList = [17, 18, 27, 22, 23, 24, 25, 10]
+outPinList = [17, 18, 27, 22, 23, 10]
 inPinList = [5, 26, 19, 13, 14]
 
 for i in outPinList:
 	GPIO.setup(i, GPIO.OUT)
-	GPIO.output(i, GPIO.HIGH)
+	GPIO.output(i, GPIO.LOW)
 
 for i in inPinList:
 	GPIO.setup(i, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
@@ -61,7 +61,7 @@ def maxTemp(a):
 
 def emptyReservoir(a):
 # takes 'a' time in seconds to run the air pump to drain the tank
-	GPIO.output(10, GPIO.LOW)
+	GPIO.output(10, GPIO.HIGH)
 	b = 0
 	#print ("Running the air pump for %i seconds" % (a))
 	printProgressBar(0, a, prefix = 'Drain Progress:  ', suffix = 'Complete', length = 100)
@@ -71,7 +71,7 @@ def emptyReservoir(a):
 		printProgressBar(b, a, prefix = 'Drain Progress:  ', suffix = 'Complete', length = 100)
 	printProgressBar(a, a, prefix = 'Drain Progress:  ', suffix = 'Complete', length = 100)
 	print()
-	GPIO.output(10, GPIO.HIGH)
+	GPIO.output(10, GPIO.LOW)
 	#print ("Air pump now off")
 
 
@@ -93,7 +93,7 @@ def fillReservoir(a):
 	writeCommand(1)
 	#print ('flow counter cleared')
 	for x in [17, 18, 22]:
-		GPIO.output(x, GPIO.LOW)
+		GPIO.output(x, GPIO.HIGH)
 	#print ("Pump and Solenoids On")
 	for x in [26, 19, 13]:
 		GPIO.setup(x, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -107,9 +107,9 @@ def fillReservoir(a):
 		num = num + 1
 	printProgressBar(flowMax, flowMax, prefix = 'Fill Progress:   ', suffix = 'Complete', length = 100)
 	print()
-	GPIO.output(17, GPIO.HIGH)
-	GPIO.output(18, GPIO.HIGH)
-	GPIO.output(22, GPIO.HIGH)
+	GPIO.output(17, GPIO.LOW)
+	GPIO.output(18, GPIO.LOW)
+	GPIO.output(22, GPIO.LOW)
 	#print ('pump and solenoids off')
 	with open("fillcount-%s.txt" % (a), "a+") as fl:
 		fl.write(str(b) + "\n")
@@ -119,15 +119,15 @@ def heater(a):
 # heats to the target raw sensor value
 # 950 seems to be good for coffee as of this revision
 	print ('heating')
-	GPIO.output(22, GPIO.LOW)
-	GPIO.output(27, GPIO.LOW)
+	GPIO.output(22, GPIO.HIGH)
+	GPIO.output(27, GPIO.HIGH)
 	heat = getTemp()
 	while heat < a:
 		print (heat)
 		heat = getTemp()
 		time.sleep(1)
-	GPIO.output(27, GPIO.HIGH)
-	GPIO.output(22, GPIO.HIGH)
+	GPIO.output(27, GPIO.LOW)
+	GPIO.output(22, GPIO.LOW)
 	print ('heating complete')
 
 def coffeeHeat(level):
@@ -139,7 +139,7 @@ def coffeeHeat(level):
 	h = 5 # this is how many seconds the temp must hold otherwise heat again
 	getTemp()
 	a = getTemp()
-	GPIO.output(22, GPIO.LOW)
+	GPIO.output(22, GPIO.HIGH)
 	while (a > heatPointLow): # we need to let the sensor normalize to cold water being added
 		a = getTemp()
 		#print (a)
@@ -154,14 +154,14 @@ def coffeeHeat(level):
 	while (b <= h):
 		while( a < heatPointHigh ):
 			b = 0
-			GPIO.output(27, GPIO.LOW)
+			GPIO.output(27, GPIO.HIGH)
 			a = getTemp()
 			offsetA = a - offset
 			maxa = (offsetA if offsetA > maxa else maxa)
 			maxa = (offsetHighA if offsetA > offsetHighA else maxa)
 			time.sleep(0.1)
 			printProgressBar((maxa), offsetTotal, prefix = 'Heating progress:', suffix = 'Complete', length = 100)
-		GPIO.output(27, GPIO.HIGH)
+		GPIO.output(27, GPIO.LOW)
 		b = b + 1
 		time.sleep(1)
 		a = getTemp()
@@ -173,7 +173,7 @@ def coffeeHeat(level):
 		printProgressBar((c), offsetTotal, prefix = 'Heating progress:', suffix = 'Complete', length = 100)
 	printProgressBar(offsetTotal, offsetTotal, prefix = 'Heating progress:', suffix = 'Complete', length = 100)
 	print()
-	GPIO.output(22, GPIO.HIGH)
+	GPIO.output(22, GPIO.LOW)
 
 
 def fillWhileHeat(a):
@@ -195,7 +195,7 @@ def fillWhileHeat(a):
 	writeCommand(1)
 	#print ('flow counter cleared')
 	for x in [17, 18, 22]:
-		GPIO.output(x, GPIO.LOW)
+		GPIO.output(x, GPIO.HIGH)
 	#print ("Pump and Solenoids On")
 	for x in [26, 19, 13]:
 		GPIO.setup(x, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -210,9 +210,9 @@ def fillWhileHeat(a):
 	#printProgressBar(flowMax, flowMax, prefix = 'Fill Progress:   ', suffix = 'Complete', length = 100)
 	#print()
 	for x in [17, 18]:
-		GPIO.output(x, GPIO.HIGH)
-	#GPIO.output(18, GPIO.HIGH)
-	#GPIO.output(22, GPIO.HIGH)
+		GPIO.output(x, GPIO.LOW)
+	#GPIO.output(18, GPIO.LOW)
+	#GPIO.output(22, GPIO.LOW)
 	#print ('pump and solenoids off')
 	with open("fillcount-%s.txt" % (a), "a+") as fl:
 		fl.write(str(b) + "\n")
