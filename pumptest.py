@@ -69,7 +69,7 @@ def maxTemp(a):
 
 def emptyReservoir(a):
 # takes 'a' time in seconds to run the air pump to drain the tank
-	GPIO.output(10, GPIO.HIGH)
+	GPIO.output(9, GPIO.HIGH)
 	b = 0
 	#print ("Running the air pump for %i seconds" % (a))
 	printProgressBar(0, a, prefix = 'Drain Progress:  ', suffix = 'Complete', length = 100)
@@ -79,7 +79,7 @@ def emptyReservoir(a):
 		printProgressBar(b, a, prefix = 'Drain Progress:  ', suffix = 'Complete', length = 100)
 	printProgressBar(a, a, prefix = 'Drain Progress:  ', suffix = 'Complete', length = 100)
 	print()
-	GPIO.output(10, GPIO.LOW)
+	GPIO.output(9, GPIO.LOW)
 	#print ("Air pump now off")
 
 
@@ -112,7 +112,7 @@ def fillReservoir(a):
 		num = num + 1
 	printProgressBar(flowMax, flowMax, prefix = 'Fill Progress:   ', suffix = 'Complete', length = 100)
 	print()
-	for x in [10,27,17]:
+	for x in [10, 27, 17]:
 		GPIO.output(x, GPIO.LOW)
 	with open("fillcount-%s.txt" % (a), "a+") as fl:
 		fl.write(str(b) + "\n")
@@ -122,15 +122,15 @@ def heater(a):
 # heats to the target raw sensor value
 # 950 seems to be good for coffee as of this revision
 	print ('heating')
-	GPIO.output(22, GPIO.HIGH)
-	GPIO.output(27, GPIO.HIGH)
+	for x in [10, 22]:
+	GPIO.output(x, GPIO.HIGH)
 	heat = getTemp()
 	while heat < a:
 		print (heat)
 		heat = getTemp()
 		time.sleep(1)
-	GPIO.output(27, GPIO.LOW)
-	GPIO.output(22, GPIO.LOW)
+	for x in [10,22]:
+	GPIO.output(x, GPIO.LOW)
 	print ('heating complete')
 
 def coffeeHeat(level):
@@ -334,6 +334,9 @@ try:
 
 		elif (usrip == 'brew'):
 			brewCoffee()
+
+		elif (usrip == 'flow'):
+			print(flowCount())
 
 		else:
 			print ("You need to say high, med, or low...Jackass....")
