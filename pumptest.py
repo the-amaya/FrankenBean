@@ -15,7 +15,7 @@ GAIN = 8
 num = 0
 temp1 = '/sys/bus/w1/devices/28-000004a83011/w1_slave'
 temp2 = '/sys/bus/w1/devices/28-000004a7915b/w1_slave'
-heatPointLow = 850
+heatPointLow = 750
 heatPointHigh = 1000
 
 
@@ -61,7 +61,7 @@ def maxTemp(a):
 	c = 0
 	while c < a:
 		c = c + 1
-		l.insert(0, readTemp(a)[1])
+		l.insert(0, readTemp(temp1)[1])
 		l.pop()
 		print ('count %i of %i   current max read = %f' % (c, a, max(l)))
 		time.sleep(1)
@@ -98,6 +98,7 @@ def fillReservoir(a):
 		print ("the function fillReservoir now requires a level as 'low', 'med', 'high'")
 		return None
 	num = 0
+	b = 0
 	writeCommand(1)
 	#print ('flow counter cleared')
 	for x in [10, 27, 17]:
@@ -123,14 +124,24 @@ def heater(a):
 # 950 seems to be good for coffee as of this revision
 	print ('heating')
 	for x in [10, 22]:
-	GPIO.output(x, GPIO.HIGH)
+		GPIO.output(x, GPIO.HIGH)
 	heat = getTemp()
-	while heat < a:
-		print (heat)
+	b = 0
+	h = 5
+	while (b <= h):
+		while (heat < a):
+			b = 0
+			GPIO.output(22, GPIO.HIGH)
+			print (heat)
+			heat = getTemp()
+			time.sleep(1)
 		heat = getTemp()
+		GPIO.output(22, GPIO.LOW)
+		b = b + 1
+		print (b, heat)
 		time.sleep(1)
-	for x in [10,22]:
-	GPIO.output(x, GPIO.LOW)
+	for x in [10, 22]:
+		GPIO.output(x, GPIO.LOW)
 	print ('heating complete')
 
 def coffeeHeat(level):
@@ -142,7 +153,7 @@ def coffeeHeat(level):
 	h = 5 # this is how many seconds the temp must hold otherwise heat again
 	getTemp()
 	a = getTemp()
-	GPIO.output(22, GPIO.HIGH) #heater
+	#GPIO.output(22, GPIO.HIGH) #heater
 	while (a > heatPointLow): # we need to let the sensor normalize to cold water being added
 		a = getTemp()
 		#print (a)
@@ -176,7 +187,7 @@ def coffeeHeat(level):
 		printProgressBar((c), offsetTotal, prefix = 'Heating progress:', suffix = 'Complete', length = 100)
 	printProgressBar(offsetTotal, offsetTotal, prefix = 'Heating progress:', suffix = 'Complete', length = 100)
 	print()
-	for x in [10, 22]
+	for x in [10, 22]:
 		GPIO.output(x, GPIO.LOW)
 
 
@@ -222,7 +233,7 @@ def stepTest(a):
 		time.sleep(10)
 		heater(i)
 		emptyReservoir(20)
-		j = maxTemp(temp1)
+		j = maxTemp(10)
 		f = ('for sensor value %i the max output temp was %f' % (i, j))
 		print (f)
 		with open("steptest.txt", "a+") as att_file:
