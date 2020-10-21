@@ -122,7 +122,7 @@ def fillReservoir(a):
 def heater(a):
 # heats to the target raw sensor value
 # 950 seems to be good for coffee as of this revision
-	print ('heating')
+	#print ('heating')
 	for x in [10, 22]:
 		GPIO.output(x, GPIO.HIGH)
 	heat = getTemp()
@@ -132,17 +132,17 @@ def heater(a):
 		while (heat < a):
 			b = 0
 			GPIO.output(22, GPIO.HIGH)
-			print (heat)
+			#print (heat)
 			heat = getTemp()
 			time.sleep(1)
 		heat = getTemp()
 		GPIO.output(22, GPIO.LOW)
 		b = b + 1
-		print (b, heat)
+		#print (b, heat)
 		time.sleep(1)
 	for x in [10, 22]:
 		GPIO.output(x, GPIO.LOW)
-	print ('heating complete')
+	#print ('heating complete')
 
 def coffeeHeat(level):
 # this controls the heat cycle when brewing
@@ -266,6 +266,8 @@ def i2cadc():
 def brewCoffee():
 # used to dispense one french press worth of water had coffee brewing temperature
 	os.system('clear')
+	print ('pre-heat so the level sensors will work on the first run')
+	heater(300) #pre-heat so level sensors work
 	print ('Cycle 1 of 3 starting')
 	#dc = fillReservoir('med')
 	coffeeHeat('high')
