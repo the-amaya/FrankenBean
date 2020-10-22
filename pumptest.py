@@ -207,6 +207,8 @@ def fillWhileHeat(a):
 		return None
 	num = 0
 	b = 0
+	while (getTemp() < 300):
+		time.sleep(1)
 	writeCommand(1)
 	#print ('flow counter cleared')
 	for x in [17, 27, 10]:
@@ -266,8 +268,8 @@ def i2cadc():
 def brewCoffee():
 # used to dispense one french press worth of water had coffee brewing temperature
 	os.system('clear')
-	print ('pre-heat so the level sensors will work on the first run')
-	heater(300) #pre-heat so level sensors work
+	#print ('pre-heat so the level sensors will work on the first run')
+	#heater(300) #pre-heat so level sensors work
 	print ('Cycle 1 of 3 starting')
 	#dc = fillReservoir('med')
 	coffeeHeat('high')
